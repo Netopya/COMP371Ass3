@@ -23,23 +23,6 @@ Camera* camera;
 vector<SceneObject*> sceneObjects;
 vector<Light*> lights;
 
-int main() {
-	cout << "Hello World";
-
-	//Creates an image with three channels and sets it to black
-	cimg_library::CImg<float> image(WIDTH, HEIGHT, 1, 3, 0);
-
-	readInputFile();
-
-
-	//Display the rendered image on screen
-	cimg_library::CImgDisplay main_disp(image, "Render");
-	while (!main_disp.is_closed())
-		main_disp.wait();
-
-	return 0;
-}
-
 int readInputFile() {
 	// Ask the user for the input file
 	cout << "Enter the name of the file" << endl;
@@ -140,4 +123,21 @@ int readInputFile() {
 			lights.push_back(new Light(pos, col));
 		}
 	}
+}
+
+int main() {
+	cout << "Hello World";
+
+	//Creates an image with three channels and sets it to black
+	cimg_library::CImg<float> image(WIDTH, HEIGHT, 1, 3, 0);
+
+	readInputFile();
+
+
+	//Display the rendered image on screen
+	cimg_library::CImgDisplay main_disp(image, "Render");
+	while (!main_disp.is_closed())
+		main_disp.wait();
+
+	return 0;
 }
