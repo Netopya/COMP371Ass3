@@ -125,6 +125,14 @@ int readInputFile() {
 	}
 }
 
+void debugSceneObjects() {
+	for (unsigned i = 0; i < sceneObjects.size(); i++)
+	{
+		cout << sceneObjects[i]->toString() << endl << endl;
+	}
+	system("pause");
+}
+
 int main() {
 	cout << "Hello World";
 
@@ -133,6 +141,7 @@ int main() {
 
 	readInputFile();
 
+	debugSceneObjects();	
 
 	//Display the rendered image on screen
 	cimg_library::CImgDisplay main_disp(image, "Render");
