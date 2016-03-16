@@ -20,3 +20,13 @@ string SceneObject::toString()
 
 	return ss.str();
 }
+
+float SceneObject::vecHit(glm::vec3 position, glm::vec3 vector)
+{
+	return -1.0f;
+}
+
+const glm::vec3 SceneObject::getAmbient()
+{
+	return ambient;
+}

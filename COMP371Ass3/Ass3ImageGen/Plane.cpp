@@ -18,3 +18,18 @@ string Plane::toString()
 	
 	return ss.str();
 }
+
+float Plane::vecHit(glm::vec3 position, glm::vec3 vector)
+{
+	float dom = glm::dot(normal, vector);
+
+	if (dom == 0)
+	{
+		return false;
+	}
+
+	float t = (glm::dot(normal, this->position) - glm::dot(normal, position)) / dom;
+
+	return t;
+
+}

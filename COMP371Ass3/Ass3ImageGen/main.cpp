@@ -5,6 +5,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <math.h>
 
 #include "SceneObject.h"
 #include "Camera.h"
@@ -14,14 +15,27 @@
 #include "Triangle.h"
 
 using namespace std;
-const int WIDTH = 800;
-const int HEIGHT = 600;
+int width = 800;
+int height = 600;
 
 ifstream file;
 
 Camera* camera;
 vector<SceneObject*> sceneObjects;
 vector<Light*> lights;
+vector<vector<glm::vec3*>*> cameraRays;
+
+const string files[] = {
+	"scene1.txt",
+	"scene2.txt",
+	"scene3.txt",
+	"scene4.txt",
+	"scene5.txt",
+	"scene6.txt",
+	"scene7.txt"
+};
+
+const int numFiles = 7;
 
 int readInputFile() {
 	// Ask the user for the input file
@@ -123,6 +137,8 @@ int readInputFile() {
 			lights.push_back(new Light(pos, col));
 		}
 	}
+
+	return 0;
 }
 
 void debugSceneObjects() {
@@ -133,20 +149,106 @@ void debugSceneObjects() {
 	system("pause");
 }
 
+void calculateRays() {
+	width = camera->getAspect_ratio() * height;
+	float a = camera->getAspect_ratio();
+
+	glm::vec3 cameraPos(camera->getPosition());
+	glm::vec3 cop(cameraPos);
+	cop.z -= camera->getFocal_length();
+
+	float opposite = tan(camera->getTheta() / 2.0f);
+
+	glm::vec3 topLeft(-1.0f * a * opposite, opposite, 0);
+	glm::vec3 topRight(a * opposite, opposite, 0);
+	glm::vec3 bottomLeft(-1.0f * a * opposite, -1.0f * opposite, 0);
+	glm::vec3 bottomRight(a * opposite, -1.0f * opposite, 0);
+	topLeft += camera->getPosition();
+
+
+	float scenePixelHeight = 2.0f * opposite;
+	float scenePixelWidth = a * scenePixelHeight;
+
+	float pixelHeight = scenePixelHeight / height;
+	float pixelWidth = scenePixelWidth / width;
+
+	float heightFactor = scenePixelHeight / height;
+	float widthFactor = scenePixelWidth / width;
+
+	for (int i = 0; i < height; i++)
+	{
+		cameraRays.push_back(new vector<glm::vec3*>());
+
+		for (int j = 0; j < width; j++)
+		{
+			float y = topLeft.y - (i*heightFactor) - (pixelHeight / 2);
+			float x = topLeft.x + (j*widthFactor) + (pixelWidth / 2);
+			glm::vec3 pixelPosition(x, y, cameraPos.z);
+
+			cameraRays[i]->push_back(new glm::vec3(glm::normalize(pixelPosition - cop)));
+		}
+	}
+}
+
 int main() {
 	cout << "Hello World";
 
-	//Creates an image with three channels and sets it to black
-	cimg_library::CImg<float> image(WIDTH, HEIGHT, 1, 3, 0);
 
-	readInputFile();
 
-	debugSceneObjects();	
+	while (true)
+	{
 
-	//Display the rendered image on screen
-	cimg_library::CImgDisplay main_disp(image, "Render");
-	while (!main_disp.is_closed())
-		main_disp.wait();
+		if (readInputFile() > 0)
+		{
+			break;
+		}
+
+		file.close();
+
+		calculateRays();
+
+		//Creates an image with three channels and sets it to black
+		cimg_library::CImg<float> image(width, height, 1, 3, 0);
+
+
+		glm::vec3 cameraPos(camera->getPosition());
+		glm::vec3 cop(cameraPos);
+		cop.z -= camera->getFocal_length();
+
+		for (int i = 0; i < height; i++)
+		{
+			for (int j = 0; j < width; j++)
+			{
+				glm::vec3 vectorRay(*cameraRays[i]->at(j));
+
+				float mint = -1;
+
+				for (unsigned k = 0; k < sceneObjects.size(); k++)
+				{
+					float newt = sceneObjects[k]->vecHit(cop, vectorRay);
+					if (newt >= 0 && (mint < 0 || newt < mint))
+					{
+
+						image(j, height - 1 - i, 0, 0) = 255 * sceneObjects[k]->getAmbient().x;
+						image(j, height - 1 - i, 0, 1) = 255 * sceneObjects[k]->getAmbient().y;
+						image(j, height - 1 - i, 0, 2) = 255 * sceneObjects[k]->getAmbient().z;
+
+					}
+				}
+
+			}
+		}
+
+		//image(100, 100, 0, 2, 255);
+
+		//debugSceneObjects();	
+
+		//Display the rendered image on screen
+		cimg_library::CImgDisplay main_disp(image, "Render");
+		while (!main_disp.is_closed())
+			main_disp.wait();
+	}
+
 
 	return 0;
 }
