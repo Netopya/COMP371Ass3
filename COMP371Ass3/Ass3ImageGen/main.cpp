@@ -165,14 +165,17 @@ void debugSceneObjects() {
 }
 
 void calculateRays() {
-	width = camera->getAspect_ratio() * height;
+	
 	float a = camera->getAspect_ratio();
-	float focalLength = camera->getFocal_length();
+	
+	width = a * height;
+
+	float focalLength = 500.0f;//camera->getFocal_length();
 	glm::vec3 cameraPos(camera->getPosition());
 	glm::vec3 cop(cameraPos);
 	cameraPos.z += focalLength;
 
-	float opposite = focalLength * tan(camera->getTheta() * M_PI / 180.0f / 2.0f);
+	float opposite = focalLength * tan(camera->getTheta() * M_PI / 180.0f / 2.0f / 2.0f) / 5.0f;
 
 	glm::vec3 topLeft(-1.0f * a * opposite, opposite, 0);
 	//glm::vec3 topRight(a * opposite, opposite, 0);
