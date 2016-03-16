@@ -4,7 +4,7 @@
 
 Plane::Plane(glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess, glm::vec3 normal, glm::vec3 position) : SceneObject(ambient, diffuse, specular, shininess)
 {
-	this->normal = normal;
+	this->normal = glm::normalize(normal);
 	this->position = position;
 }
 
@@ -32,4 +32,9 @@ float Plane::vecHit(glm::vec3 position, glm::vec3 vector)
 
 	return t;
 
+}
+
+glm::vec3 Plane::getNormalAtPoint(glm::vec3 point)
+{
+	return normal;
 }

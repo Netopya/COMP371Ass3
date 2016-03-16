@@ -16,4 +16,5 @@ public:
 	virtual string toString();
 	virtual float vecHit(glm::vec3 position, glm::vec3 vector);
 	const glm::vec3 getAmbient();
+	virtual glm::vec3 getNormalAtPoint(glm::vec3 point);
 };

@@ -39,3 +39,8 @@ float Sphere::vecHit(glm::vec3 position, glm::vec3 vector)
 
 	return t1 < t2 ? t1 : t2;
 }
+
+glm::vec3 Sphere::getNormalAtPoint(glm::vec3 point)
+{
+	return glm::normalize(point - position);
+}

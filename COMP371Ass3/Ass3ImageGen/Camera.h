@@ -16,4 +16,5 @@ public:
 	const float getTheta();
 	const float getFocal_length();
 	const float getAspect_ratio();
+	const glm::vec3 getCenterOfProjection();
 };

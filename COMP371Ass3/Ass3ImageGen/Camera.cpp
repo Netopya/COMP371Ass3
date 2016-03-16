@@ -14,7 +14,7 @@ void Camera::calculateRays()
 
 const glm::vec3 Camera::getPosition()
 {
-	return position;
+	return glm::vec3(position.x, position.y, position.z - focal_length);
 }
 
 const float Camera::getTheta()
@@ -30,4 +30,9 @@ const float Camera::getFocal_length()
 const float Camera::getAspect_ratio()
 {
 	return aspect_ratio;
+}
+
+const glm::vec3 Camera::getCenterOfProjection()
+{
+	return position;
 }

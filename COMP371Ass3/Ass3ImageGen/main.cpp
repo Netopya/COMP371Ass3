@@ -170,12 +170,19 @@ void calculateRays() {
 	
 	width = a * height;
 
+	/*
 	float focalLength = 500.0f;//camera->getFocal_length();
 	glm::vec3 cameraPos(camera->getPosition());
 	glm::vec3 cop(cameraPos);
 	cameraPos.z += focalLength;
+	*/
 
-	float opposite = focalLength * tan(camera->getTheta() * M_PI / 180.0f / 2.0f / 2.0f) / 5.0f;
+	float focalLength = camera->getFocal_length();
+	glm::vec3 cameraPos(camera->getPosition());
+	glm::vec3 cop(camera->getCenterOfProjection());
+	//cameraPos.z += focalLength;
+
+	float opposite = focalLength * tan(camera->getTheta() * M_PI / 180.0f / 2.0f);
 
 	glm::vec3 topLeft(-1.0f * a * opposite, opposite, 0);
 	//glm::vec3 topRight(a * opposite, opposite, 0);
@@ -229,9 +236,7 @@ int main() {
 		cimg_library::CImg<float> image(width, height, 1, 3, 0);
 
 
-		glm::vec3 cameraPos(camera->getPosition());
-		glm::vec3 cop(cameraPos);
-		cop.z -= camera->getFocal_length();
+		glm::vec3 cop(camera->getCenterOfProjection());
 
 		for (int i = 0; i < height; i++)
 		{
@@ -240,18 +245,23 @@ int main() {
 				glm::vec3 vectorRay(*cameraRays[i]->at(j));
 
 				float mint = -1;
-
+				int foundK = -1;
+				float at;
 				for (unsigned k = 0; k < sceneObjects.size(); k++)
 				{
 					float newt = sceneObjects[k]->vecHit(cop, vectorRay);
 					if (newt >= 0 && (mint < 0 || newt < mint))
 					{
-
-						image(j, i, 0, 0) = 255 * sceneObjects[k]->getAmbient().x;
-						image(j, i, 0, 1) = 255 * sceneObjects[k]->getAmbient().y;
-						image(j, i, 0, 2) = 255 * sceneObjects[k]->getAmbient().z;
-
+						foundK = k;
+						at = newt;
 					}
+				}
+
+				if (foundK >= 0)
+				{
+					image(j, i, 0, 0) = 255 * sceneObjects[foundK]->getAmbient().x;
+					image(j, i, 0, 1) = 255 * sceneObjects[foundK]->getAmbient().y;
+					image(j, i, 0, 2) = 255 * sceneObjects[foundK]->getAmbient().z;
 				}
 
 			}

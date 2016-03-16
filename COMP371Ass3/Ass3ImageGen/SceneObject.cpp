@@ -30,3 +30,8 @@ const glm::vec3 SceneObject::getAmbient()
 {
 	return ambient;
 }
+
+glm::vec3 SceneObject::getNormalAtPoint(glm::vec3 point)
+{
+	return glm::vec3();
+}
