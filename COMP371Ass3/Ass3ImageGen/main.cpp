@@ -246,22 +246,55 @@ int main() {
 
 				float mint = -1;
 				int foundK = -1;
-				float at;
+				glm::vec3 at;
 				for (unsigned k = 0; k < sceneObjects.size(); k++)
 				{
 					float newt = sceneObjects[k]->vecHit(cop, vectorRay);
 					if (newt >= 0 && (mint < 0 || newt < mint))
 					{
 						foundK = k;
-						at = newt;
+						at = cop + newt*vectorRay;
 					}
 				}
 
 				if (foundK >= 0)
 				{
-					image(j, i, 0, 0) = 255 * sceneObjects[foundK]->getAmbient().x;
-					image(j, i, 0, 1) = 255 * sceneObjects[foundK]->getAmbient().y;
-					image(j, i, 0, 2) = 255 * sceneObjects[foundK]->getAmbient().z;
+					glm::vec3 illumination;
+					glm::vec3 normal = sceneObjects[foundK]->getNormalAtPoint(at);
+
+					for (unsigned m = 0; m < lights.size(); m++)
+					{
+						bool blocked = false;
+						glm::vec3 lightRay = glm::normalize(lights[m]->getPosition() - at);
+
+
+						for (unsigned k = 0; k < sceneObjects.size(); k++)
+						{
+							float newt = sceneObjects[k]->vecHit(at, lightRay);
+							if (newt >= 0 && (mint < 0 || newt < mint))
+							{
+								blocked = true;
+								break;
+							}
+						}
+
+						if (!blocked) {
+							glm::vec3 reflectionV(vectorRay - 2.0f * (glm::dot(vectorRay, normal) * normal));
+							illumination += lights[m]->getColour() * (sceneObjects[foundK]->getDiffuse() * glm::dot(lightRay, normal) + sceneObjects[foundK]->getSpecular() * pow(glm::dot(reflectionV, vectorRay), sceneObjects[foundK]->getShininess()));
+						}
+					}
+					
+
+
+					//image(j, i, 0, 0) = 255 * sceneObjects[foundK]->getAmbient().x;
+					//image(j, i, 0, 1) = 255 * sceneObjects[foundK]->getAmbient().y;
+					//image(j, i, 0, 2) = 255 * sceneObjects[foundK]->getAmbient().z;
+
+					image(j, i, 0, 0) = 255 * illumination.x;
+					image(j, i, 0, 1) = 255 * illumination.y;
+					image(j, i, 0, 2) = 255 * illumination.z;
+
+
 				}
 
 			}

@@ -9,4 +9,6 @@ private:
 
 public:
 	Light(glm::vec3 position, glm::vec3 colour);
+	const glm::vec3 getPosition();
+	const glm::vec3 getColour();
 };

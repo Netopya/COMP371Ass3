@@ -31,6 +31,21 @@ const glm::vec3 SceneObject::getAmbient()
 	return ambient;
 }
 
+const glm::vec3 SceneObject::getDiffuse()
+{
+	return diffuse;
+}
+
+const glm::vec3 SceneObject::getSpecular()
+{
+	return specular;
+}
+
+const float SceneObject::getShininess()
+{
+	return shininess;
+}
+
 glm::vec3 SceneObject::getNormalAtPoint(glm::vec3 point)
 {
 	return glm::vec3();
