@@ -15,6 +15,7 @@
 #include "Triangle.h"
 
 #define M_PI        3.14159265358979323846264338327950288   /* pi */
+#define KINDA_SMALL_NUMBER 0.0001
 
 using namespace std;
 int width = 800;
@@ -253,25 +254,30 @@ int main() {
 					if (newt >= 0 && (mint < 0 || newt < mint))
 					{
 						foundK = k;
+						mint = newt;
 						at = cop + newt*vectorRay;
 					}
 				}
 
 				if (foundK >= 0)
 				{
-					glm::vec3 illumination;
+					glm::vec3 illumination;// (sceneObjects[foundK]->getAmbient() * 0.5f);
 					glm::vec3 normal = sceneObjects[foundK]->getNormalAtPoint(at);
 
 					for (unsigned m = 0; m < lights.size(); m++)
 					{
 						bool blocked = false;
+
+						at += normal * (float)KINDA_SMALL_NUMBER;
+
 						glm::vec3 lightRay = glm::normalize(lights[m]->getPosition() - at);
 
+						
 
 						for (unsigned k = 0; k < sceneObjects.size(); k++)
 						{
 							float newt = sceneObjects[k]->vecHit(at, lightRay);
-							if (newt >= 0 && (mint < 0 || newt < mint))
+							if (newt >= 0)
 							{
 								blocked = true;
 								break;
@@ -279,8 +285,17 @@ int main() {
 						}
 
 						if (!blocked) {
+							// http://math.stackexchange.com/questions/13261/how-to-get-a-reflection-vector
 							glm::vec3 reflectionV(vectorRay - 2.0f * (glm::dot(vectorRay, normal) * normal));
-							illumination += lights[m]->getColour() * (sceneObjects[foundK]->getDiffuse() * glm::dot(lightRay, normal) + sceneObjects[foundK]->getSpecular() * pow(glm::dot(reflectionV, vectorRay), sceneObjects[foundK]->getShininess()));
+
+
+							float diffuseVector = glm::dot(lightRay, normal);
+							diffuseVector = diffuseVector < 0 ? 0 : diffuseVector;
+							float specularVector = glm::dot(reflectionV, vectorRay);
+							specularVector = specularVector < 0 ? 0 : specularVector;
+
+
+							illumination += lights[m]->getColour() * (sceneObjects[foundK]->getDiffuse() * diffuseVector + sceneObjects[foundK]->getSpecular() * pow(specularVector, sceneObjects[foundK]->getShininess()));
 						}
 					}
 					
