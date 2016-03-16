@@ -14,6 +14,8 @@
 #include "Sphere.h"
 #include "Triangle.h"
 
+#define M_PI        3.14159265358979323846264338327950288   /* pi */
+
 using namespace std;
 int width = 800;
 int height = 600;
@@ -37,12 +39,23 @@ const string files[] = {
 
 const int numFiles = 7;
 
-int readInputFile() {
-	// Ask the user for the input file
-	cout << "Enter the name of the file" << endl;
+int readInputFile(string inputFile) {
 
 	string filename;
-	cin >> filename;
+
+	if (inputFile == "")
+	{
+		// Ask the user for the input file
+		cout << "Enter the name of the file" << endl;
+
+
+		cin >> filename;
+	}
+	else
+	{
+		filename = inputFile;
+	}
+	
 
 	file.open(filename, ios::in);
 
@@ -138,6 +151,8 @@ int readInputFile() {
 		}
 	}
 
+	file.close();
+
 	return 0;
 }
 
@@ -152,17 +167,17 @@ void debugSceneObjects() {
 void calculateRays() {
 	width = camera->getAspect_ratio() * height;
 	float a = camera->getAspect_ratio();
-
+	float focalLength = camera->getFocal_length();
 	glm::vec3 cameraPos(camera->getPosition());
 	glm::vec3 cop(cameraPos);
-	cop.z -= camera->getFocal_length();
+	cameraPos.z += focalLength;
 
-	float opposite = tan(camera->getTheta() / 2.0f);
+	float opposite = focalLength * tan(camera->getTheta() * M_PI / 180.0f / 2.0f);
 
 	glm::vec3 topLeft(-1.0f * a * opposite, opposite, 0);
-	glm::vec3 topRight(a * opposite, opposite, 0);
-	glm::vec3 bottomLeft(-1.0f * a * opposite, -1.0f * opposite, 0);
-	glm::vec3 bottomRight(a * opposite, -1.0f * opposite, 0);
+	//glm::vec3 topRight(a * opposite, opposite, 0);
+	//glm::vec3 bottomLeft(-1.0f * a * opposite, -1.0f * opposite, 0);
+	//glm::vec3 bottomRight(a * opposite, -1.0f * opposite, 0);
 	topLeft += camera->getPosition();
 
 
@@ -195,15 +210,15 @@ int main() {
 
 
 
-	while (true)
+	for (int l = 0; l < numFiles; l++)
 	{
 
-		if (readInputFile() > 0)
+		if (readInputFile(files[l]) > 0)
 		{
 			break;
 		}
 
-		file.close();
+		
 
 		calculateRays();
 
@@ -229,9 +244,9 @@ int main() {
 					if (newt >= 0 && (mint < 0 || newt < mint))
 					{
 
-						image(j, height - 1 - i, 0, 0) = 255 * sceneObjects[k]->getAmbient().x;
-						image(j, height - 1 - i, 0, 1) = 255 * sceneObjects[k]->getAmbient().y;
-						image(j, height - 1 - i, 0, 2) = 255 * sceneObjects[k]->getAmbient().z;
+						image(j, i, 0, 0) = 255 * sceneObjects[k]->getAmbient().x;
+						image(j, i, 0, 1) = 255 * sceneObjects[k]->getAmbient().y;
+						image(j, i, 0, 2) = 255 * sceneObjects[k]->getAmbient().z;
 
 					}
 				}
@@ -247,6 +262,14 @@ int main() {
 		cimg_library::CImgDisplay main_disp(image, "Render");
 		while (!main_disp.is_closed())
 			main_disp.wait();
+
+		delete camera;
+		sceneObjects.clear();
+
+		lights.clear();
+
+
+		cameraRays.clear();
 	}
 
 
