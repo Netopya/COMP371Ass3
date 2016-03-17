@@ -29,7 +29,7 @@ vector<Light*> lights;
 vector<vector<glm::vec3*>*> cameraRays;
 
 const string files[] = {
-	"scene1.txt",
+	"scene7.txt",
 	"scene2.txt",
 	"scene3.txt",
 	"scene4.txt",
@@ -229,7 +229,7 @@ int main() {
 			break;
 		}
 
-		
+		debugSceneObjects();
 
 		calculateRays();
 
