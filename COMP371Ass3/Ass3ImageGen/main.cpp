@@ -21,6 +21,9 @@ using namespace std;
 int width = 800;
 int height = 600;
 
+float globalPixelHeight;
+float globalPixelWidth;
+
 ifstream file;
 
 Camera* camera;
@@ -198,6 +201,9 @@ void calculateRays() {
 	float pixelHeight = scenePixelHeight / height;
 	float pixelWidth = scenePixelWidth / width;
 
+	globalPixelHeight = pixelHeight;
+	globalPixelWidth = pixelWidth;
+
 	float heightFactor = scenePixelHeight / height;
 	float widthFactor = scenePixelWidth / width;
 
@@ -213,6 +219,80 @@ void calculateRays() {
 
 			cameraRays[i]->push_back(new glm::vec3(glm::normalize(pixelPosition - cop)));
 		}
+	}
+}
+
+glm::vec3 shootRay(glm::vec3 position, glm::vec3 ray)
+{
+	float mint = -1;
+	int foundK = -1;
+	glm::vec3 at;
+	for (unsigned k = 0; k < sceneObjects.size(); k++)
+	{
+		float newt = sceneObjects[k]->vecHit(position, ray);
+		if (newt >= 0 && (mint < 0 || newt < mint))
+		{
+			foundK = k;
+			mint = newt;
+			at = position + newt*ray;
+		}
+	}
+
+	glm::vec3 illumination;// (sceneObjects[foundK]->getAmbient() * 0.5f);
+
+	if (foundK >= 0)
+	{
+
+		glm::vec3 normal = sceneObjects[foundK]->getNormalAtPoint(at);
+
+		for (unsigned m = 0; m < lights.size(); m++)
+		{
+			bool blocked = false;
+
+			at += normal * (float)KINDA_SMALL_NUMBER;
+
+			glm::vec3 lightRay = glm::normalize(lights[m]->getPosition() - at);
+
+
+
+			for (unsigned k = 0; k < sceneObjects.size(); k++)
+			{
+				float newt = sceneObjects[k]->vecHit(at, lightRay);
+				if (newt >= 0)
+				{
+					blocked = true;
+					break;
+				}
+			}
+
+			if (!blocked) {
+				// http://math.stackexchange.com/questions/13261/how-to-get-a-reflection-vector
+				glm::vec3 reflectionV(ray - 2.0f * (glm::dot(ray, normal) * normal));
+
+
+				float diffuseVector = glm::dot(lightRay, normal);
+				diffuseVector = diffuseVector < 0 ? 0 : diffuseVector;
+				float specularVector = glm::dot(reflectionV, ray);
+				specularVector = specularVector < 0 ? 0 : specularVector;
+
+
+				illumination += lights[m]->getColour() * (sceneObjects[foundK]->getDiffuse() * diffuseVector + sceneObjects[foundK]->getSpecular() * pow(specularVector, sceneObjects[foundK]->getShininess()));
+			}
+		}
+
+
+		return illumination;
+		//image(j, i, 0, 0) = 255 * sceneObjects[foundK]->getAmbient().x;
+		//image(j, i, 0, 1) = 255 * sceneObjects[foundK]->getAmbient().y;
+		//image(j, i, 0, 2) = 255 * sceneObjects[foundK]->getAmbient().z;
+
+
+
+
+	}
+	else
+	{
+		return glm::vec3();
 	}
 }
 
@@ -245,72 +325,20 @@ int main() {
 			{
 				glm::vec3 vectorRay(*cameraRays[i]->at(j));
 
-				float mint = -1;
-				int foundK = -1;
-				glm::vec3 at;
-				for (unsigned k = 0; k < sceneObjects.size(); k++)
-				{
-					float newt = sceneObjects[k]->vecHit(cop, vectorRay);
-					if (newt >= 0 && (mint < 0 || newt < mint))
-					{
-						foundK = k;
-						mint = newt;
-						at = cop + newt*vectorRay;
-					}
-				}
+				glm::vec3 illumination(shootRay(cop, vectorRay));
 
-				if (foundK >= 0)
-				{
-					glm::vec3 illumination;// (sceneObjects[foundK]->getAmbient() * 0.5f);
-					glm::vec3 normal = sceneObjects[foundK]->getNormalAtPoint(at);
+				//glm::vec3 illumination;
 
-					for (unsigned m = 0; m < lights.size(); m++)
-					{
-						bool blocked = false;
+				//illumination += shootRay(cop, glm::vec3(vectorRay.x - globalPixelWidth / 4.0f, vectorRay.y - globalPixelHeight / 4.0f, vectorRay.z));
+				//illumination += shootRay(cop, glm::vec3(vectorRay.x + globalPixelWidth / 4.0f, vectorRay.y - globalPixelHeight / 4.0f, vectorRay.z));
+				//illumination += shootRay(cop, glm::vec3(vectorRay.x - globalPixelWidth / 4.0f, vectorRay.y + globalPixelHeight / 4.0f, vectorRay.z));
+				//illumination += shootRay(cop, glm::vec3(vectorRay.x + globalPixelWidth / 4.0f, vectorRay.y + globalPixelHeight / 4.0f, vectorRay.z));
 
-						at += normal * (float)KINDA_SMALL_NUMBER;
+				//illumination /= 4.0f;
 
-						glm::vec3 lightRay = glm::normalize(lights[m]->getPosition() - at);
-
-						
-
-						for (unsigned k = 0; k < sceneObjects.size(); k++)
-						{
-							float newt = sceneObjects[k]->vecHit(at, lightRay);
-							if (newt >= 0)
-							{
-								blocked = true;
-								break;
-							}
-						}
-
-						if (!blocked) {
-							// http://math.stackexchange.com/questions/13261/how-to-get-a-reflection-vector
-							glm::vec3 reflectionV(vectorRay - 2.0f * (glm::dot(vectorRay, normal) * normal));
-
-
-							float diffuseVector = glm::dot(lightRay, normal);
-							diffuseVector = diffuseVector < 0 ? 0 : diffuseVector;
-							float specularVector = glm::dot(reflectionV, vectorRay);
-							specularVector = specularVector < 0 ? 0 : specularVector;
-
-
-							illumination += lights[m]->getColour() * (sceneObjects[foundK]->getDiffuse() * diffuseVector + sceneObjects[foundK]->getSpecular() * pow(specularVector, sceneObjects[foundK]->getShininess()));
-						}
-					}
-					
-
-
-					//image(j, i, 0, 0) = 255 * sceneObjects[foundK]->getAmbient().x;
-					//image(j, i, 0, 1) = 255 * sceneObjects[foundK]->getAmbient().y;
-					//image(j, i, 0, 2) = 255 * sceneObjects[foundK]->getAmbient().z;
-
-					image(j, i, 0, 0) = 255 * illumination.x;
-					image(j, i, 0, 1) = 255 * illumination.y;
-					image(j, i, 0, 2) = 255 * illumination.z;
-
-
-				}
+				image(j, i, 0, 0) = 255 * illumination.x;
+				image(j, i, 0, 1) = 255 * illumination.y;
+				image(j, i, 0, 2) = 255 * illumination.z;
 
 			}
 		}
