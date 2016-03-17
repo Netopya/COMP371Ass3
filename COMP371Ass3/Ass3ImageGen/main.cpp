@@ -29,10 +29,10 @@ ifstream file;
 Camera* camera;
 vector<SceneObject*> sceneObjects;
 vector<Light*> lights;
-vector<vector<glm::vec3*>*> cameraRays;
+vector<vector<vector<glm::vec3*>*>*> cameraRays;
 
 const string files[] = {
-	"scene7.txt",
+	"scene1.txt",
 	"scene2.txt",
 	"scene3.txt",
 	"scene4.txt",
@@ -209,15 +209,27 @@ void calculateRays() {
 
 	for (int i = 0; i < height; i++)
 	{
-		cameraRays.push_back(new vector<glm::vec3*>());
+		cameraRays.push_back(new vector<vector<glm::vec3*>*>());
 
 		for (int j = 0; j < width; j++)
 		{
+			cameraRays[i]->push_back(new vector<glm::vec3*>);
+
 			float y = topLeft.y - (i*heightFactor) - (pixelHeight / 2);
 			float x = topLeft.x + (j*widthFactor) + (pixelWidth / 2);
-			glm::vec3 pixelPosition(x, y, cameraPos.z);
 
-			cameraRays[i]->push_back(new glm::vec3(glm::normalize(pixelPosition - cop)));
+			float aaHeight = pixelHeight / 4;
+			float aaWidth = pixelWidth / 4;
+
+			glm::vec3 pixelPosition1(x - aaWidth, y - aaHeight, cameraPos.z);
+			glm::vec3 pixelPosition2(x + aaWidth, y - aaHeight, cameraPos.z);
+			glm::vec3 pixelPosition3(x - aaWidth, y + aaHeight, cameraPos.z);
+			glm::vec3 pixelPosition4(x + aaWidth, y + aaHeight, cameraPos.z);
+
+			cameraRays[i]->at(j)->push_back(new glm::vec3(glm::normalize(pixelPosition1 - cop)));
+			cameraRays[i]->at(j)->push_back(new glm::vec3(glm::normalize(pixelPosition2 - cop)));
+			cameraRays[i]->at(j)->push_back(new glm::vec3(glm::normalize(pixelPosition3 - cop)));
+			cameraRays[i]->at(j)->push_back(new glm::vec3(glm::normalize(pixelPosition4 - cop)));
 		}
 	}
 }
@@ -267,8 +279,8 @@ glm::vec3 shootRay(glm::vec3 position, glm::vec3 ray)
 
 			if (!blocked) {
 				// http://math.stackexchange.com/questions/13261/how-to-get-a-reflection-vector
-				glm::vec3 reflectionV(ray - 2.0f * (glm::dot(ray, normal) * normal));
-
+				//glm::vec3 reflectionV(ray - 2.0f * (glm::dot(ray, normal) * normal));
+				glm::vec3 reflectionV(glm::reflect(ray, normal));
 
 				float diffuseVector = glm::dot(lightRay, normal);
 				diffuseVector = diffuseVector < 0 ? 0 : diffuseVector;
@@ -323,18 +335,25 @@ int main() {
 		{
 			for (int j = 0; j < width; j++)
 			{
-				glm::vec3 vectorRay(*cameraRays[i]->at(j));
+				//glm::vec3 vectorRay(*cameraRays[i]->at(j));
 
-				glm::vec3 illumination(shootRay(cop, vectorRay));
+				//glm::vec3 illumination(shootRay(cop, vectorRay));
 
-				//glm::vec3 illumination;
+				glm::vec3 illumination;
+
+				for (int k = 0; k < cameraRays[i]->at(j)->size(); k++)
+				{
+					glm::vec3 vectorRay(*cameraRays[i]->at(j)->at(k));
+
+					illumination += shootRay(cop, vectorRay);
+				}
 
 				//illumination += shootRay(cop, glm::vec3(vectorRay.x - globalPixelWidth / 4.0f, vectorRay.y - globalPixelHeight / 4.0f, vectorRay.z));
 				//illumination += shootRay(cop, glm::vec3(vectorRay.x + globalPixelWidth / 4.0f, vectorRay.y - globalPixelHeight / 4.0f, vectorRay.z));
 				//illumination += shootRay(cop, glm::vec3(vectorRay.x - globalPixelWidth / 4.0f, vectorRay.y + globalPixelHeight / 4.0f, vectorRay.z));
 				//illumination += shootRay(cop, glm::vec3(vectorRay.x + globalPixelWidth / 4.0f, vectorRay.y + globalPixelHeight / 4.0f, vectorRay.z));
 
-				//illumination /= 4.0f;
+				illumination /= cameraRays[i]->at(j)->size();
 
 				image(j, i, 0, 0) = 255 * illumination.x;
 				image(j, i, 0, 1) = 255 * illumination.y;
