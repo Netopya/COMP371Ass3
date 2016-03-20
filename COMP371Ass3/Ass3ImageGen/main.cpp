@@ -36,11 +36,11 @@ using namespace std;
 
 const float REFLECTION_FACTOR = 0.1f;	// Intensity of reflections
 const int NUM_REFLECTIONS = 10;			// Number of recursive reflections to perform
-const bool SHOW_IMAGE = false;			// Whether to show the image in a window
+const bool SHOW_IMAGE = true;			// Whether to show the image in a window
 const float AMBIENT_FACTOR = 0.1f;		// Intensity of the ambient colour on an unlit surface
 
 int width = 800;
-int height = 1500;
+int height = 600;
 
 ifstream file;
 
@@ -109,7 +109,8 @@ int readInputFile(string inputFile) {
 			file >> title >> position.x >> position.y >> position.z;
 			file >> title >> fov >> title >> focal_length >> title >> ascpect_ratio;
 
-			camera = new Camera(position, fov, focal_length, ascpect_ratio);
+			camera = new Camera(position, fov, focal_length, ascpect_ratio, height);
+			width = camera->getWidth();
 		}
 		else if (objectType == "triangle")
 		{
@@ -362,7 +363,7 @@ int main() {
 		cout << "Processing rays" << endl;
 
 		// Calculate camera rays
-		calculateRays();
+		//calculateRays();
 
 		//Creates an image with three channels and sets it to black
 		cimg_library::CImg<float> image(width, height, 1, 3, 0);
@@ -377,22 +378,28 @@ int main() {
 			{
 				glm::vec3 illumination;
 
+				vector<glm::vec3*> rays(camera->getRays(i, j));
+
 				// Go through a pixel multiple times for anti aliasing
-				for (int k = 0; k < cameraRays[i]->at(j)->size(); k++)
+				for (int k = 0; k < rays.size(); k++)
 				{
-					glm::vec3 vectorRay(*cameraRays[i]->at(j)->at(k));
+					glm::vec3 vectorRay(*rays[k]);
 
 					illumination += shootRay(cop, vectorRay, NUM_REFLECTIONS);
 				}
 
 				// Average colour of anti-aliasing
-				illumination /= cameraRays[i]->at(j)->size();
+				illumination /= rays.size();
 
 				// Set the colour of the pixel
 				image(j, i, 0, 0) = 255 * illumination.x;
 				image(j, i, 0, 1) = 255 * illumination.y;
 				image(j, i, 0, 2) = 255 * illumination.z;
 
+				for (unsigned k = 0; k < rays.size(); k++)
+				{
+					delete rays[k];
+				}
 			}
 		}
 		
