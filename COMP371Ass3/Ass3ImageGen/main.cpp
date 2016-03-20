@@ -36,11 +36,11 @@ using namespace std;
 
 const float REFLECTION_FACTOR = 0.1f;	// Intensity of reflections
 const int NUM_REFLECTIONS = 10;			// Number of recursive reflections to perform
-const bool SHOW_IMAGE = true;			// Whether to show the image in a window
+const bool SHOW_IMAGE = false;			// Whether to show the image in a window
 const float AMBIENT_FACTOR = 0.1f;		// Intensity of the ambient colour on an unlit surface
 
 int width = 800;
-int height = 600;
+int height = 1500;
 
 ifstream file;
 
@@ -51,7 +51,7 @@ vector<vector<vector<glm::vec3*>*>*> cameraRays;
 
 const string files[] = {
 	"scene1.txt",
-	"scene7.txt",
+	"scene2.txt",
 	"scene3.txt",
 	"scene4.txt",
 	"scene5.txt",
