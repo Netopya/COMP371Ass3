@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 #include <math.h>
+#include <time.h>
+#include <stdlib.h>
 
 #include "SceneObject.h"
 #include "Camera.h"
@@ -17,9 +19,21 @@
 #define M_PI        3.14159265358979323846264338327950288   /* pi */
 #define KINDA_SMALL_NUMBER 0.0001
 
+
+/*
+	COMP 371 Assignment 3 - Programming Assignment 3
+	Custom ray tracer
+	Defines object from an input file and draws the scene
+
+*/
+
+
+
 using namespace std;
 
 const float REFLECTION_FACTOR = 0.1f;
+const int NUM_REFLECTIONS = 10;
+const bool SHOW_IMAGE = true;
 
 int width = 800;
 int height = 600;
@@ -36,7 +50,7 @@ vector<vector<vector<glm::vec3*>*>*> cameraRays;
 
 const string files[] = {
 	"scene1.txt",
-	"scene2.txt",
+	"scene7.txt",
 	"scene3.txt",
 	"scene4.txt",
 	"scene5.txt",
@@ -287,8 +301,6 @@ glm::vec3 shootRay(glm::vec3 position, glm::vec3 ray, int iterations)
 			}
 
 			if (!blocked) {
-				// http://math.stackexchange.com/questions/13261/how-to-get-a-reflection-vector
-				//glm::vec3 reflectionV(ray - 2.0f * (glm::dot(ray, normal) * normal));
 				glm::vec3 reflectionV(glm::reflect(lightRay, normal));
 
 				float diffuseVector = glm::dot(lightRay, normal);
@@ -298,26 +310,19 @@ glm::vec3 shootRay(glm::vec3 position, glm::vec3 ray, int iterations)
 
 
 				illumination += lights[m]->getColour() * (sceneObjects[foundK]->getDiffuse() * diffuseVector + sceneObjects[foundK]->getSpecular() * pow(specularVector, sceneObjects[foundK]->getShininess()));
-
-				if (iterations > 0)
-				{
-					illumination += REFLECTION_FACTOR * shootRay(at, glm::reflect(ray, normal), --iterations);
-				}
 			}
 		}
 
+		if (iterations > 0)
+		{
+			illumination += REFLECTION_FACTOR * shootRay(at, glm::reflect(ray, normal), --iterations);
+		}
 
 		return illumination;
-		//image(j, i, 0, 0) = 255 * sceneObjects[foundK]->getAmbient().x;
-		//image(j, i, 0, 1) = 255 * sceneObjects[foundK]->getAmbient().y;
-		//image(j, i, 0, 2) = 255 * sceneObjects[foundK]->getAmbient().z;
-
-
-
-
 	}
 	else
 	{
+		// Return an empty vector if nothing found
 		return glm::vec3();
 	}
 }
@@ -325,77 +330,73 @@ glm::vec3 shootRay(glm::vec3 position, glm::vec3 ray, int iterations)
 int main() {
 	cout << "Hello World";
 
+	/* initialize random seed: */
+	srand(time(NULL));
 
-
+	// Go through all specified scene files
 	for (int l = 0; l < numFiles; l++)
 	{
-
+		// Read file, skip if there is an error
 		if (readInputFile(files[l]) > 0)
 		{
 			break;
 		}
 
-		//debugSceneObjects();
 
 		cout << "Processing rays" << endl;
 
+		// Calculate camera rays
 		calculateRays();
 
 		//Creates an image with three channels and sets it to black
 		cimg_library::CImg<float> image(width, height, 1, 3, 0);
 
-
+		// Get the center of projection
 		glm::vec3 cop(camera->getCenterOfProjection());
 
+		// Go through all pixels and find the colour at that points
 		for (int i = 0; i < height; i++)
 		{
 			for (int j = 0; j < width; j++)
 			{
-				//glm::vec3 vectorRay(*cameraRays[i]->at(j));
-
-				//glm::vec3 illumination(shootRay(cop, vectorRay));
-
 				glm::vec3 illumination;
 
+				// Go through a pixel multiple times for anti aliasing
 				for (int k = 0; k < cameraRays[i]->at(j)->size(); k++)
 				{
 					glm::vec3 vectorRay(*cameraRays[i]->at(j)->at(k));
 
-					illumination += shootRay(cop, vectorRay, 10);
+					illumination += shootRay(cop, vectorRay, NUM_REFLECTIONS);
 				}
 
-				//illumination += shootRay(cop, glm::vec3(vectorRay.x - globalPixelWidth / 4.0f, vectorRay.y - globalPixelHeight / 4.0f, vectorRay.z));
-				//illumination += shootRay(cop, glm::vec3(vectorRay.x + globalPixelWidth / 4.0f, vectorRay.y - globalPixelHeight / 4.0f, vectorRay.z));
-				//illumination += shootRay(cop, glm::vec3(vectorRay.x - globalPixelWidth / 4.0f, vectorRay.y + globalPixelHeight / 4.0f, vectorRay.z));
-				//illumination += shootRay(cop, glm::vec3(vectorRay.x + globalPixelWidth / 4.0f, vectorRay.y + globalPixelHeight / 4.0f, vectorRay.z));
-
+				// Average colour of anti-aliasing
 				illumination /= cameraRays[i]->at(j)->size();
 
+				// Set the colour of the pixel
 				image(j, i, 0, 0) = 255 * illumination.x;
 				image(j, i, 0, 1) = 255 * illumination.y;
 				image(j, i, 0, 2) = 255 * illumination.z;
 
 			}
 		}
-
-		//image(100, 100, 0, 2, 255);
-
-		//debugSceneObjects();	
-
-		//cimg_library::CImgDisplay local(image, "Hah", 0);
 		
 
-		//Display the rendered image on screen
-		/*cimg_library::CImgDisplay main_disp(image, "Render");
-		while (!main_disp.is_closed())
-			main_disp.wait();*/
+		if (SHOW_IMAGE)
+		{
+			//Display the rendered image on screen
+			cimg_library::CImgDisplay main_disp(image, "Render");
+			while (!main_disp.is_closed())
+				main_disp.wait();
+		}		
 
+		// Save the image to a file
 		image.normalize(0, 255);
 		image.save((files[l] + ".bmp").c_str());
 
 
 		cout << "Clearing memory, please wait" << endl;
 
+		// Delete all objects
 		delete camera;
 
 		for (unsigned i = 0; i < sceneObjects.size(); i++)
