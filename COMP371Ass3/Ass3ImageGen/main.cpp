@@ -47,7 +47,6 @@ ifstream file;
 Camera* camera;
 vector<SceneObject*> sceneObjects;
 vector<Light*> lights;
-vector<vector<vector<glm::vec3*>*>*> cameraRays;
 
 const string files[] = {
 	"scene1.txt",
@@ -187,78 +186,6 @@ void debugSceneObjects() {
 	system("pause");
 }
 
-// Jitter a value around 0
-float jitter(float value)
-{
-	value *= 0.8f;
-	return ((rand() % 100) / 100.0f * value) - (value / 2.0f);
-}
-
-// Calculate all the rays to shoot out of the camera
-void calculateRays() {
-	
-	float a = camera->getAspect_ratio();
-	
-	// Set the width based on the aspect ratio
-	width = a * height;
-
-	float focalLength = camera->getFocal_length();
-	glm::vec3 cameraPos(camera->getPosition());
-	glm::vec3 cop(camera->getCenterOfProjection());
-
-	float opposite = focalLength * tan(camera->getTheta() * M_PI / 180.0f / 2.0f);
-
-	// Calculate the position of the top left pixel
-	glm::vec3 topLeft(-1.0f * a * opposite, opposite, 0);
-	topLeft += camera->getPosition();
-
-	float scenePixelHeight = 2.0f * opposite;
-	float scenePixelWidth = a * scenePixelHeight;
-
-	float pixelHeight = scenePixelHeight / height;
-	float pixelWidth = scenePixelWidth / width;
-
-	float aaHeight = pixelHeight / 4;
-	float aaWidth = pixelWidth / 4;
-
-	// Find a value to jitter anti-aliasing samples by
-	float jitterH = jitter(aaHeight);
-	float jitterW = jitter(aaWidth);
-
-	cameraRays.reserve(height);
-
-	for (int i = 0; i < height; i++)
-	{
-		cameraRays.push_back(new vector<vector<glm::vec3*>*>());
-		
-		cameraRays[i]->reserve(width);
-
-		for (int j = 0; j < width; j++)
-		{
-			cameraRays[i]->push_back(new vector<glm::vec3*>);
-			
-			cameraRays[i]->at(j)->reserve(4);
-
-			// Calculate the position of each pixel
-			float y = topLeft.y - (i*pixelHeight) - (pixelHeight / 2.0f);
-			float x = topLeft.x + (j*pixelWidth) + (pixelWidth / 2.0f);
-
-			// Sample each pixel four times
-			// Split each pixel into four quadrants with each sample jittered within its quadrant
-			glm::vec3 pixelPosition1(x - aaWidth + jitterW, y - aaHeight + jitterH, cameraPos.z);
-			glm::vec3 pixelPosition2(x + aaWidth + jitterW, y - aaHeight + jitterH, cameraPos.z);
-			glm::vec3 pixelPosition3(x - aaWidth + jitterW, y + aaHeight + jitterH, cameraPos.z);
-			glm::vec3 pixelPosition4(x + aaWidth + jitterW, y + aaHeight + jitterH, cameraPos.z);
-
-			// Save the rays
-			cameraRays[i]->at(j)->push_back(new glm::vec3(glm::normalize(pixelPosition1 - cop)));
-			cameraRays[i]->at(j)->push_back(new glm::vec3(glm::normalize(pixelPosition2 - cop)));
-			cameraRays[i]->at(j)->push_back(new glm::vec3(glm::normalize(pixelPosition3 - cop)));
-			cameraRays[i]->at(j)->push_back(new glm::vec3(glm::normalize(pixelPosition4 - cop)));
-		}
-	}
-}
-
 // Shoot a ray a determine the colour
 glm::vec3 shootRay(glm::vec3 position, glm::vec3 ray, int iterations)
 {
@@ -362,9 +289,6 @@ int main() {
 
 		cout << "Processing rays" << endl;
 
-		// Calculate camera rays
-		//calculateRays();
-
 		//Creates an image with three channels and sets it to black
 		cimg_library::CImg<float> image(width, height, 1, 3, 0);
 
@@ -435,22 +359,6 @@ int main() {
 		}
 
 		lights.clear();
-
-
-		for (unsigned i = 0; i < cameraRays.size(); i++)
-		{
-			for (unsigned j = 0; j < cameraRays[i]->size(); j++)
-			{
-				for (unsigned k = 0; k < cameraRays[i]->at(j)->size(); k++)
-				{
-					delete(cameraRays[i]->at(j)->at(k));
-				}
-				delete(cameraRays[i]->at(j));
-			}
-			delete(cameraRays[i]);
-		}
-
-		cameraRays.clear();
 	}
 
 

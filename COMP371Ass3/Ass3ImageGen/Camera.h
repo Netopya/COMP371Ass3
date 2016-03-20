@@ -38,6 +38,6 @@ public:
 	const float getFocal_length();
 	const float getAspect_ratio();
 	const glm::vec3 getCenterOfProjection();
-	vector<glm::vec3*> getRays(int y, int x);
+	vector<glm::vec3*> getRays(int y, int x); // Get the camera ray for a specific pixel
 	const int getWidth();
 };

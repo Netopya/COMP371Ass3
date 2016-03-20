@@ -10,6 +10,7 @@ Camera::Camera(glm::vec3 position, float theta, float focal_length, float aspect
 	this->height = height;
 	width = aspect_ratio * height;
 
+	// Calculate the top left pixel
 	float opposite = focal_length * tan(theta * M_PI / 180.0f / 2.0f);
 	topLeft.x = -1.0f * aspect_ratio * opposite;
 	topLeft.y = opposite;
@@ -60,7 +61,7 @@ vector<glm::vec3*> Camera::getRays(int y, int x)
 	vector<glm::vec3*> rays;
 	rays.reserve(4);
 
-	// Calculate the position of each pixel
+	// Calculate the center position
 	float py = topLeft.y - (y*pixelHeight) - (pixelHeight / 2.0f);
 	float px = topLeft.x + (x*pixelWidth) + (pixelWidth / 2.0f);
 
