@@ -371,6 +371,9 @@ int main() {
 		while (!main_disp.is_closed())
 			main_disp.wait();
 
+
+		cout << "Clearing memory, please wait" << endl;
+
 		delete camera;
 
 		for (unsigned i = 0; i < sceneObjects.size(); i++)
@@ -387,7 +390,6 @@ int main() {
 
 		lights.clear();
 
-		vector<glm::vec3*> todelete;
 
 		for (unsigned i = 0; i < cameraRays.size(); i++)
 		{
@@ -395,23 +397,12 @@ int main() {
 			{
 				for (unsigned k = 0; k < cameraRays[i]->at(j)->size(); k++)
 				{
-					//todelete.push_back(cameraRays[i]->at(j)->at(k));
 					delete(cameraRays[i]->at(j)->at(k));
 				}
 				delete(cameraRays[i]->at(j));
-				//cameraRays[i]->at(j)->clear();
 			}
 			delete(cameraRays[i]);
-			//cameraRays[i]->clear();
 		}
-
-		/*
-		for (std::vector<glm::vec3*>::iterator it = todelete.begin(); it != todelete.end(); ++it)
-		{
-			delete (*it);
-		}*/
-
-		todelete.clear();
 
 		cameraRays.clear();
 	}
