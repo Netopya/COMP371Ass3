@@ -3,6 +3,10 @@
 #include "SceneObject.h"
 #include "../glm/glm.hpp"
 
+/*
+	Class for a sphere object
+*/
+
 class Sphere : public SceneObject {
 private:
 	glm::vec3 position;

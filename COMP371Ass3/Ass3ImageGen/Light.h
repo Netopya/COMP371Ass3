@@ -2,6 +2,10 @@
 
 #include "../glm/glm.hpp"
 
+/*
+	Class to hold light information
+*/
+
 class Light {
 private:
 	glm::vec3 position;

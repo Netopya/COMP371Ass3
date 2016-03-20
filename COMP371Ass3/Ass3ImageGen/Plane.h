@@ -3,6 +3,10 @@
 #include "SceneObject.h"
 #include "../glm/glm.hpp"
 
+/*
+	Class to hold plane information
+*/
+
 class Plane : public SceneObject{
 private:
 	glm::vec3 normal;

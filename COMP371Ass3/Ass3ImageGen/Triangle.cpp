@@ -25,6 +25,8 @@ string Triangle::toString()
 
 float Triangle::vecHit(glm::vec3 position, glm::vec3 vector)
 {
+	// Find the location of the hit on the plane formed by the vector
+
 	float dom = glm::dot(normal, vector);
 
 	if (dom == 0)
@@ -37,7 +39,7 @@ float Triangle::vecHit(glm::vec3 position, glm::vec3 vector)
 	glm::vec3 placeOnTriangle = position + t * vector;
 
 	
-
+	// Determine if the point is on the triangle
 	// Based on http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle
 	bool b1, b2, b3;
 
@@ -52,39 +54,7 @@ float Triangle::vecHit(glm::vec3 position, glm::vec3 vector)
 	else
 	{
 		return -1.0f;
-	}
-	
-
-	/*
-	glm::vec3 b1 = placeOnTriangle - vertex1;
-	glm::vec3 b2 = placeOnTriangle - vertex2;
-	glm::vec3 b3 = placeOnTriangle - vertex3;
-
-	bool a1 = (b1.x > 0 || b2.x > 0 || b3.x > 0) && (b1.x < 0 || b2.x < 0 || b3.x < 0);
-	bool a2 = (b1.y > 0 || b2.y > 0 || b3.y > 0) && (b1.y < 0 || b2.y < 0 || b3.y < 0);
-	bool a3 = (b1.z > 0 || b2.z > 0 || b3.z > 0) && (b1.z < 0 || b2.z < 0 || b3.z < 0);
-	*/
-	
-	/*
-	if (t < 0.0f)
-	{
-		return t;
-	}
-
-	float at = abs(glm::length(glm::cross(vertex2, vertex3))) / 2.0f;
-	float a1 = abs(glm::length(glm::cross(placeOnTriangle, vertex1))) / 2.0f;
-	float a2 = abs(glm::length(glm::cross(placeOnTriangle, vertex2))) / 2.0f;
-	float a3 = abs(glm::length(glm::cross(placeOnTriangle, vertex3))) / 2.0f;
-
-	if (!(at < (a1 + a2 + a3 + 2.0f)) )
-	{
-		return t;
-	}
-	else
-	{
-		return -1.0f;
-	}*/
-	
+	}	
 }
 
 glm::vec3 Triangle::getNormalAtPoint(glm::vec3 point)
@@ -94,5 +64,6 @@ glm::vec3 Triangle::getNormalAtPoint(glm::vec3 point)
 
 float Triangle::sign(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3)
 {
+	// Helper function from http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle
 	return glm::dot((p1.x - p3.x), (p2.y - p3.y)) - glm::dot((p2.x - p3.x),(p1.y - p3.y));
 }

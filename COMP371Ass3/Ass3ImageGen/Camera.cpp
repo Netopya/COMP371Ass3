@@ -8,12 +8,9 @@ Camera::Camera(glm::vec3 position, float theta, float focal_length, float aspect
 	this->aspect_ratio = aspect_ratio;
 }
 
-void Camera::calculateRays()
-{
-}
-
 const glm::vec3 Camera::getPosition()
 {
+	// The camera is located infront of the center of projection
 	return glm::vec3(position.x, position.y, position.z - focal_length);
 }
 

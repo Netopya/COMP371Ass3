@@ -21,6 +21,8 @@ string Plane::toString()
 
 float Plane::vecHit(glm::vec3 position, glm::vec3 vector)
 {
+	// Whether a vector hits a plane
+
 	float dom = glm::dot(normal, vector);
 
 	if (dom == 0)
@@ -30,6 +32,7 @@ float Plane::vecHit(glm::vec3 position, glm::vec3 vector)
 
 	float t = (glm::dot(normal, this->position) - glm::dot(normal, position)) / dom;
 
+	// Return the factor with which to multiply the vector in order to reach the hit location
 	return t;
 
 }

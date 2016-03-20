@@ -28,7 +28,7 @@ float Sphere::vecHit(glm::vec3 position, glm::vec3 vector)
 	float descriminant = pow(b,2) - 4.0f * c;
 	if (descriminant < 0)
 	{
-		return -1;
+		return -1; // If the descriminant is invalid, vector doesn't hit
 	}
 
 	descriminant = sqrt(descriminant);
@@ -36,7 +36,7 @@ float Sphere::vecHit(glm::vec3 position, glm::vec3 vector)
 	float t1 = (-1.0f * b + descriminant) / 2;
 	float t2 = (-1.0f * b - descriminant) / 2;
 
-
+	// Return the closest hit
 	return t1 < t2 ? t1 : t2;
 }
 

@@ -3,6 +3,10 @@
 #include "SceneObject.h"
 #include "../glm/glm.hpp"
 
+/*
+	Class to hold triangle information defined by four points
+*/
+
 class Triangle : public SceneObject {
 private:
 	glm::vec3 vertex1;
