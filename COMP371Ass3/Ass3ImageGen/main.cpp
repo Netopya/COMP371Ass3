@@ -18,6 +18,9 @@
 #define KINDA_SMALL_NUMBER 0.0001
 
 using namespace std;
+
+const float REFLECTION_FACTOR = 0.1f;
+
 int width = 800;
 int height = 600;
 
@@ -207,13 +210,19 @@ void calculateRays() {
 	float heightFactor = scenePixelHeight / height;
 	float widthFactor = scenePixelWidth / width;
 
+	cameraRays.reserve(height);
+
 	for (int i = 0; i < height; i++)
 	{
 		cameraRays.push_back(new vector<vector<glm::vec3*>*>());
+		
+		cameraRays[i]->reserve(width);
 
 		for (int j = 0; j < width; j++)
 		{
 			cameraRays[i]->push_back(new vector<glm::vec3*>);
+			
+			cameraRays[i]->at(j)->reserve(4);
 
 			float y = topLeft.y - (i*heightFactor) - (pixelHeight / 2);
 			float x = topLeft.x + (j*widthFactor) + (pixelWidth / 2);
@@ -234,7 +243,7 @@ void calculateRays() {
 	}
 }
 
-glm::vec3 shootRay(glm::vec3 position, glm::vec3 ray)
+glm::vec3 shootRay(glm::vec3 position, glm::vec3 ray, int iterations)
 {
 	float mint = -1;
 	int foundK = -1;
@@ -280,7 +289,7 @@ glm::vec3 shootRay(glm::vec3 position, glm::vec3 ray)
 			if (!blocked) {
 				// http://math.stackexchange.com/questions/13261/how-to-get-a-reflection-vector
 				//glm::vec3 reflectionV(ray - 2.0f * (glm::dot(ray, normal) * normal));
-				glm::vec3 reflectionV(glm::reflect(ray, normal));
+				glm::vec3 reflectionV(glm::reflect(lightRay, normal));
 
 				float diffuseVector = glm::dot(lightRay, normal);
 				diffuseVector = diffuseVector < 0 ? 0 : diffuseVector;
@@ -289,6 +298,11 @@ glm::vec3 shootRay(glm::vec3 position, glm::vec3 ray)
 
 
 				illumination += lights[m]->getColour() * (sceneObjects[foundK]->getDiffuse() * diffuseVector + sceneObjects[foundK]->getSpecular() * pow(specularVector, sceneObjects[foundK]->getShininess()));
+
+				if (iterations > 0)
+				{
+					illumination += REFLECTION_FACTOR * shootRay(at, glm::reflect(ray, normal), --iterations);
+				}
 			}
 		}
 
@@ -321,7 +335,9 @@ int main() {
 			break;
 		}
 
-		debugSceneObjects();
+		//debugSceneObjects();
+
+		cout << "Processing rays" << endl;
 
 		calculateRays();
 
@@ -345,7 +361,7 @@ int main() {
 				{
 					glm::vec3 vectorRay(*cameraRays[i]->at(j)->at(k));
 
-					illumination += shootRay(cop, vectorRay);
+					illumination += shootRay(cop, vectorRay, 10);
 				}
 
 				//illumination += shootRay(cop, glm::vec3(vectorRay.x - globalPixelWidth / 4.0f, vectorRay.y - globalPixelHeight / 4.0f, vectorRay.z));
@@ -366,10 +382,16 @@ int main() {
 
 		//debugSceneObjects();	
 
+		//cimg_library::CImgDisplay local(image, "Hah", 0);
+		
+
 		//Display the rendered image on screen
-		cimg_library::CImgDisplay main_disp(image, "Render");
+		/*cimg_library::CImgDisplay main_disp(image, "Render");
 		while (!main_disp.is_closed())
-			main_disp.wait();
+			main_disp.wait();*/
+
+		image.normalize(0, 255);
+		image.save((files[l] + ".bmp").c_str());
 
 
 		cout << "Clearing memory, please wait" << endl;
