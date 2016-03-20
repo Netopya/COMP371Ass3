@@ -25,21 +25,22 @@
 	Custom ray tracer
 	Defines object from an input file and draws the scene
 
+	Features:
+	Anti-aliasing
+	Recursive reflections
 */
 
 
 
 using namespace std;
 
-const float REFLECTION_FACTOR = 0.1f;
-const int NUM_REFLECTIONS = 10;
-const bool SHOW_IMAGE = true;
+const float REFLECTION_FACTOR = 0.1f;	// Intensity of reflections
+const int NUM_REFLECTIONS = 10;			// Number of recursive reflections to perform
+const bool SHOW_IMAGE = true;			// Whether to show the image in a window
+const float AMBIENT_FACTOR = 0.1f;		// Intensity of the ambient colour on an unlit surface
 
 int width = 800;
 int height = 600;
-
-float globalPixelHeight;
-float globalPixelWidth;
 
 ifstream file;
 
@@ -68,15 +69,12 @@ int readInputFile(string inputFile) {
 	{
 		// Ask the user for the input file
 		cout << "Enter the name of the file" << endl;
-
-
 		cin >> filename;
 	}
 	else
 	{
 		filename = inputFile;
 	}
-	
 
 	file.open(filename, ios::in);
 
@@ -90,6 +88,7 @@ int readInputFile(string inputFile) {
 	int numOfObjects;
 	file >> numOfObjects;
 
+	// Iterate over the number of objects
 	while (numOfObjects > 0)
 	{
 		numOfObjects--;
@@ -97,8 +96,9 @@ int readInputFile(string inputFile) {
 		string objectType;
 		file >> objectType;
 
-		string title;
+		string title; // Placeholder string to hold the labels
 
+		// Create the appropriate object depending on the specified type
 		if (objectType == "camera")
 		{		
 			glm::vec3 position;
@@ -177,6 +177,7 @@ int readInputFile(string inputFile) {
 	return 0;
 }
 
+// Method to print out scene objects to the console
 void debugSceneObjects() {
 	for (unsigned i = 0; i < sceneObjects.size(); i++)
 	{
@@ -185,32 +186,30 @@ void debugSceneObjects() {
 	system("pause");
 }
 
+// Jitter a value around 0
+float jitter(float value)
+{
+	value *= 0.8f;
+	return ((rand() % 100) / 100.0f * value) - (value / 2.0f);
+}
+
+// Calculate all the rays to shoot out of the camera
 void calculateRays() {
 	
 	float a = camera->getAspect_ratio();
 	
+	// Set the width based on the aspect ratio
 	width = a * height;
-
-	/*
-	float focalLength = 500.0f;//camera->getFocal_length();
-	glm::vec3 cameraPos(camera->getPosition());
-	glm::vec3 cop(cameraPos);
-	cameraPos.z += focalLength;
-	*/
 
 	float focalLength = camera->getFocal_length();
 	glm::vec3 cameraPos(camera->getPosition());
 	glm::vec3 cop(camera->getCenterOfProjection());
-	//cameraPos.z += focalLength;
 
 	float opposite = focalLength * tan(camera->getTheta() * M_PI / 180.0f / 2.0f);
 
+	// Calculate the position of the top left pixel
 	glm::vec3 topLeft(-1.0f * a * opposite, opposite, 0);
-	//glm::vec3 topRight(a * opposite, opposite, 0);
-	//glm::vec3 bottomLeft(-1.0f * a * opposite, -1.0f * opposite, 0);
-	//glm::vec3 bottomRight(a * opposite, -1.0f * opposite, 0);
 	topLeft += camera->getPosition();
-
 
 	float scenePixelHeight = 2.0f * opposite;
 	float scenePixelWidth = a * scenePixelHeight;
@@ -218,11 +217,12 @@ void calculateRays() {
 	float pixelHeight = scenePixelHeight / height;
 	float pixelWidth = scenePixelWidth / width;
 
-	globalPixelHeight = pixelHeight;
-	globalPixelWidth = pixelWidth;
+	float aaHeight = pixelHeight / 4;
+	float aaWidth = pixelWidth / 4;
 
-	float heightFactor = scenePixelHeight / height;
-	float widthFactor = scenePixelWidth / width;
+	// Find a value to jitter anti-aliasing samples by
+	float jitterH = jitter(aaHeight);
+	float jitterW = jitter(aaWidth);
 
 	cameraRays.reserve(height);
 
@@ -238,17 +238,18 @@ void calculateRays() {
 			
 			cameraRays[i]->at(j)->reserve(4);
 
-			float y = topLeft.y - (i*heightFactor) - (pixelHeight / 2);
-			float x = topLeft.x + (j*widthFactor) + (pixelWidth / 2);
+			// Calculate the position of each pixel
+			float y = topLeft.y - (i*pixelHeight) - (pixelHeight / 2.0f);
+			float x = topLeft.x + (j*pixelWidth) + (pixelWidth / 2.0f);
 
-			float aaHeight = pixelHeight / 4;
-			float aaWidth = pixelWidth / 4;
+			// Sample each pixel four times
+			// Split each pixel into four quadrants with each sample jittered within its quadrant
+			glm::vec3 pixelPosition1(x - aaWidth + jitterW, y - aaHeight + jitterH, cameraPos.z);
+			glm::vec3 pixelPosition2(x + aaWidth + jitterW, y - aaHeight + jitterH, cameraPos.z);
+			glm::vec3 pixelPosition3(x - aaWidth + jitterW, y + aaHeight + jitterH, cameraPos.z);
+			glm::vec3 pixelPosition4(x + aaWidth + jitterW, y + aaHeight + jitterH, cameraPos.z);
 
-			glm::vec3 pixelPosition1(x - aaWidth, y - aaHeight, cameraPos.z);
-			glm::vec3 pixelPosition2(x + aaWidth, y - aaHeight, cameraPos.z);
-			glm::vec3 pixelPosition3(x - aaWidth, y + aaHeight, cameraPos.z);
-			glm::vec3 pixelPosition4(x + aaWidth, y + aaHeight, cameraPos.z);
-
+			// Save the rays
 			cameraRays[i]->at(j)->push_back(new glm::vec3(glm::normalize(pixelPosition1 - cop)));
 			cameraRays[i]->at(j)->push_back(new glm::vec3(glm::normalize(pixelPosition2 - cop)));
 			cameraRays[i]->at(j)->push_back(new glm::vec3(glm::normalize(pixelPosition3 - cop)));
@@ -257,11 +258,14 @@ void calculateRays() {
 	}
 }
 
+// Shoot a ray a determine the colour
 glm::vec3 shootRay(glm::vec3 position, glm::vec3 ray, int iterations)
 {
 	float mint = -1;
 	int foundK = -1;
 	glm::vec3 at;
+	
+	// Search for the nearest object hit
 	for (unsigned k = 0; k < sceneObjects.size(); k++)
 	{
 		float newt = sceneObjects[k]->vecHit(position, ray);
@@ -273,23 +277,30 @@ glm::vec3 shootRay(glm::vec3 position, glm::vec3 ray, int iterations)
 		}
 	}
 
-	glm::vec3 illumination;// (sceneObjects[foundK]->getAmbient() * 0.5f);
+	glm::vec3 illumination;
 
+	// If an object was found
 	if (foundK >= 0)
 	{
+		// Give it some ambient light
+		illumination += sceneObjects[foundK]->getAmbient() * AMBIENT_FACTOR;
 
+		// Normal at point hit
 		glm::vec3 normal = sceneObjects[foundK]->getNormalAtPoint(at);
+		bool lit = false;
 
+		// Go through each light source
 		for (unsigned m = 0; m < lights.size(); m++)
 		{
 			bool blocked = false;
 
+			// Move the point above the surface slightly
 			at += normal * (float)KINDA_SMALL_NUMBER;
 
+			// Calculate the vector pointing to the light source
 			glm::vec3 lightRay = glm::normalize(lights[m]->getPosition() - at);
-
-
-
+			
+			// Determine if something is blocking the light source
 			for (unsigned k = 0; k < sceneObjects.size(); k++)
 			{
 				float newt = sceneObjects[k]->vecHit(at, lightRay);
@@ -301,6 +312,10 @@ glm::vec3 shootRay(glm::vec3 position, glm::vec3 ray, int iterations)
 			}
 
 			if (!blocked) {
+				lit = true;
+
+				// Calculate the phong illumination model and add it to the illumination
+
 				glm::vec3 reflectionV(glm::reflect(lightRay, normal));
 
 				float diffuseVector = glm::dot(lightRay, normal);
@@ -311,8 +326,9 @@ glm::vec3 shootRay(glm::vec3 position, glm::vec3 ray, int iterations)
 
 				illumination += lights[m]->getColour() * (sceneObjects[foundK]->getDiffuse() * diffuseVector + sceneObjects[foundK]->getSpecular() * pow(specularVector, sceneObjects[foundK]->getShininess()));
 			}
-		}
+		}		
 
+		// Continue iterating to create a reflection
 		if (iterations > 0)
 		{
 			illumination += REFLECTION_FACTOR * shootRay(at, glm::reflect(ray, normal), --iterations);
